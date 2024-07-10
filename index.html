@@ -150,208 +150,226 @@
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ably/browser/static/ably.min.js"></script>
-  <script>
-    // Configuração do Ably
-    const ably = new Ably.Realtime({ key: 'ynrGug.SXDJOg:aoStJmyUcLlpwgEzYsJt8CFDsTBCq-yMjqNn6_DkgvM' });
+<script>
+ // Configuração do Ably
+ const ably = new Ably.Realtime({ key: 'ynrGug.SXDJOg:aoStJmyUcLlpwgEzYsJt8CFDsTBCq-yMjqNn6_DkgvM' });
 
-    // Referência para o canal Ably
-    const channel = ably.channels.get('localizacao-usuarios');
-    const chatChannel = ably.channels.get('chat');
+ // Referência para o canal Ably
+ const channel = ably.channels.get('localizacao-usuarios');
+ const chatChannel = ably.channels.get('chat');
 
-    // Inicializa o mapa Leaflet
-    const map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+ // Inicializa o mapa Leaflet
+ const map = L.map('map').setView([0, 0], 2);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+ }).addTo(map);
 
-    // Objeto para armazenar marcadores
-    const markers = {};
-    const onlineUsers = new Set();
+ // Objeto para armazenar marcadores
+ const markers = {};
+ const onlineUsers = new Set();
 
-    // Função para obter o nome de usuário do sessionStorage
-    function getUsernameFromStorage() {
-      return sessionStorage.getItem('username');
-    }
+ // Função para obter o nome de usuário do sessionStorage
+ function getUsernameFromStorage() {
+  return sessionStorage.getItem('username');
+ }
 
-    // Função para salvar o nome de usuário no sessionStorage
-    function setUsernameInStorage(username) {
-      sessionStorage.setItem('username', username);
-    }
+ // Função para salvar o nome de usuário no sessionStorage
+ function setUsernameInStorage(username) {
+  sessionStorage.setItem('username', username);
+ }
 
-    // Função para limpar o nome de usuário do sessionStorage
-    function clearUsernameFromStorage() {
-      sessionStorage.removeItem('username');
-    }
+ // Função para limpar o nome de usuário do sessionStorage
+ function clearUsernameFromStorage() {
+  sessionStorage.removeItem('username');
+ }
 
-    // Solicita a localização do usuário
-    function getUserLocation() {
-      const storedUsername = getUsernameFromStorage();
-      if (storedUsername) {
-        sendLocationToAbly(storedUsername);
-      } else {
-        promptForUsername();
-      }
-    }
-
-    // Pede ao usuário para inserir um nome de usuário
-    function promptForUsername() {
-      const username = prompt('Digite seu nome de usuário:');
-      if (username) {
-        setUsernameInStorage(username);
-        sendLocationToAbly(username);
-        showNotification(`${username} entrou no chat`);
-        channel.publish('user-joined', { username: username });
-      } else {
-        alert('Nome de usuário é obrigatório.');
-        promptForUsername();
-      }
-    }
-
-    // Envia a localização para o canal Ably
-    function sendLocationToAbly(username) {
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(position => {
-          const { latitude, longitude } = position.coords;
-          if (latitude !== undefined && longitude !== undefined) {
-            channel.publish('update-location', {
-              userId: username,
-              lat: latitude,
-              lng: longitude,
-              name: username,
-              address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` // Exemplo de endereço fictício
-            });
-
-            // Atualiza ou adiciona marcador no mapa
-            updateMarker(username, latitude, longitude);
-          } else {
-            console.error('Latitude ou Longitude indefinidos.');
-          }
-        });
-      } else {
-        alert('Geolocalização não suportada pelo seu navegador.');
-      }
-    }
-
-    // Função para atualizar ou adicionar marcador no mapa
-    function updateMarker(username, lat, lng, message = '') {
-      if (markers[username]) {
-        markers[username].setLatLng([lat, lng]);
-      } else {
-        const marker = L.marker([lat, lng]).addTo(map);
-        markers[username] = marker;
-        marker.bindPopup(`<b>${username}</b><br/>${message}`).openPopup();
-      }
-    }
-
-    // Função para receber e exibir localizações de outros usuários
-    function getOtherUsersLocations() {
-     channel.subscribe('update-location', message => {
- const { userId, lat, lng, name, address } = message.data;
- if (userId !== getUsernameFromStorage()) {
-  if (lat !== undefined && lng !== undefined) {
-   updateMarker(userId, lat, lng);
+ // Solicita a localização do usuário
+ function getUserLocation() {
+  const storedUsername = getUsernameFromStorage();
+  if (storedUsername) {
+   sendLocationToAbly(storedUsername);
   } else {
-   console.error(`Latitude ou Longitude indefinidos para o usuário ${name}`);
+   promptForUsername();
   }
  }
-});
 
-// Evento para quando um usuário entra na sala
-channel.subscribe('user-joined', message => {
- const { username } = message.data;
- onlineUsers.add(username);
- updateUserCounter();
-});
+ // Pede ao usuário para inserir um nome de usuário
+ function promptForUsername() {
+  const username = prompt('Digite seu nome:');
+  if (username) {
+   setUsernameInStorage(username);
+   sendLocationToAbly(username);
+   showNotification(`${username} esta online`);
+   channel.publish('user-joined', { username: username });
+  } else {
+   alert('Nome de usuário é obrigatório.');
+   promptForUsername();
+  }
+ }
 
-// Evento para quando um usuário sai da sala
-channel.subscribe('user-left', message => {
- const { username } = message.data;
- onlineUsers.delete(username);
- updateUserCounter();
-});
-}
+ // Envia a localização para o canal Ably
+ function sendLocationToAbly(username) {
+  if (navigator.geolocation) {
+   navigator.geolocation.watchPosition(position => {
+    const { latitude, longitude } = position.coords;
+    if (latitude !== undefined && longitude !== undefined) {
+     getReverseGeocode(latitude, longitude, address => {
+      channel.publish('update-location', {
+       userId: username,
+       lat: latitude,
+       lng: longitude,
+       name: username,
+       address: address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` // Exemplo de endereço fictício
+      });
 
-// Função para atualizar o contador de usuários e a lista de usuários
-function updateUserCounter() {
- const counterDiv = document.getElementById('user-count');
- if (counterDiv) {
-  counterDiv.textContent = `Usuários logados: ${onlineUsers.size}`;
+      // Atualiza ou adiciona marcador no mapa
+      updateMarker(username, latitude, longitude, address);
+     });
+    } else {
+     console.error('Latitude ou Longitude indefinidos.');
+    }
+   });
+  } else {
+   alert('Geolocalização não suportada pelo seu navegador.');
+  }
+ }
 
-  const userList = document.getElementById('user-list');
-  userList.innerHTML = '';
-  onlineUsers.forEach(user => {
-   const listItem = document.createElement('li');
-   listItem.textContent = `${user}`;
-   userList.appendChild(listItem);
+ // Função para obter endereço a partir das coordenadas
+ function getReverseGeocode(lat, lng, callback) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+  fetch(url)
+   .then(response => response.json())
+   .then(data => {
+    const address = data.address.road ? `${data.address.road}, ${data.address.city || data.address.town || data.address.village || ''}` : null;
+    callback(address);
+   })
+   .catch(error => {
+    console.error('Erro ao obter o endereço:', error);
+    callback(null);
+   });
+ }
+
+ // Função para atualizar ou adicionar marcador no mapa
+ function updateMarker(username, lat, lng, address = '') {
+  if (markers[username]) {
+   markers[username].setLatLng([lat, lng]);
+   markers[username].getPopup().setContent(`<b>${username}</b><br/>${address}`).openPopup();
+  } else {
+   const marker = L.marker([lat, lng]).addTo(map);
+   markers[username] = marker;
+   marker.bindPopup(`<b>${username}</b><br/>${address}`).openPopup();
+  }
+ }
+
+ // Função para receber e exibir localizações de outros usuários
+ function getOtherUsersLocations() {
+  channel.subscribe('update-location', message => {
+   const { userId, lat, lng, name, address } = message.data;
+   if (userId !== getUsernameFromStorage()) {
+    if (lat !== undefined && lng !== undefined) {
+     updateMarker(userId, lat, lng, address);
+    } else {
+     console.error(`Latitude ou Longitude indefinidos para o usuário ${name}`);
+    }
+   }
+  });
+
+  // Evento para quando um usuário entra na sala
+  channel.subscribe('user-joined', message => {
+   const { username } = message.data;
+   onlineUsers.add(username);
+   updateUserCounter();
+  });
+
+  // Evento para quando um usuário sai da sala
+  channel.subscribe('user-left', message => {
+   const { username } = message.data;
+   onlineUsers.delete(username);
+   updateUserCounter();
   });
  }
-}
 
-// Envia mensagem de chat para o canal Ably
-document.getElementById('chat-send').addEventListener('click', () => {
- const messageText = document.getElementById('chat-input').value;
- const username = getUsernameFromStorage();
- if (username) {
-  chatChannel.publish('message', {
-   username: username,
-   text: messageText,
-  });
-  document.getElementById('chat-input').value = '';
- } else {
-  alert('Você precisa estar logado para enviar mensagens.');
+ // Função para atualizar o contador de usuários e a lista de usuários
+ function updateUserCounter() {
+  const counterDiv = document.getElementById('user-count');
+  if (counterDiv) {
+   counterDiv.textContent = `Usuários logados: ${onlineUsers.size}`;
+
+   const userList = document.getElementById('user-list');
+   userList.innerHTML = '';
+   onlineUsers.forEach(user => {
+    const listItem = document.createElement('li');
+    listItem.textContent = `${user}`;
+    userList.appendChild(listItem);
+   });
+  }
  }
-});
 
-// Recebe mensagem de chat do canal Ably
-chatChannel.subscribe('message', message => {
- const { username, text } = message.data;
- const chatLog = document.getElementById('chat-log');
- const chatMessage = document.createElement('div');
- chatMessage.innerHTML = `<b>${username}</b>: ${text}`;
- chatLog.appendChild(chatMessage);
+ // Envia mensagem de chat para o canal Ably
+ document.getElementById('chat-send').addEventListener('click', () => {
+  const messageText = document.getElementById('chat-input').value;
+  const username = getUsernameFromStorage();
+  if (username) {
+   chatChannel.publish('message', {
+    username: username,
+    text: messageText,
+   });
+   document.getElementById('chat-input').value = '';
+  } else {
+   alert('Você precisa estar logado para enviar mensagens.');
+  }
+ });
 
- // Atualiza a última mensagem no popup do marcador correspondente
- if (markers[username]) {
-  const content = markers[username].getPopup().getContent();
-  const updatedContent = content.replace(/<br\/>[^<]*$/, '') + `<br/>${text}`;
-  markers[username].getPopup().setContent(updatedContent).openPopup();
+ // Recebe mensagem de chat do canal Ably
+ chatChannel.subscribe('message', message => {
+  const { username, text } = message.data;
+  const chatLog = document.getElementById('chat-log');
+  const chatMessage = document.createElement('div');
+  chatMessage.innerHTML = `<b>${username}</b>: ${text}`;
+  chatLog.appendChild(chatMessage);
+
+  // Atualiza a última mensagem no popup do marcador correspondente
+  if (markers[username]) {
+   const content = markers[username].getPopup().getContent();
+   const updatedContent = content.replace(/<br\/>[^<]*$/, '') + `<br/>${text}`;
+   markers[username].getPopup().setContent(updatedContent).openPopup();
+  }
+ });
+
+ // Mostra notificação no topo da página
+ function showNotification(message) {
+  const notificationDiv = document.getElementById('notification');
+  notificationDiv.style.display = 'block';
+  notificationDiv.textContent = message;
+  setTimeout(() => {
+   notificationDiv.style.display = 'none';
+  }, 6000);
  }
-});
 
-// Mostra notificação no topo da página
-function showNotification(message) {
- const notificationDiv = document.getElementById('notification');
- notificationDiv.style.display = 'block';
- notificationDiv.textContent = message;
- setTimeout(() => {
-  notificationDiv.style.display = 'none';
- }, 6000);
-}
+ // Chama a função para obter e enviar a localização do usuário
+ getUserLocation();
 
-// Chama a função para obter e enviar a localização do usuário
-getUserLocation();
+ // Chama a função para receber e exibir localizações de outros usuários
+ getOtherUsersLocations();
 
-// Chama a função para receber e exibir localizações de outros usuários
-getOtherUsersLocations();
+ // Publica um evento de saída do usuário quando a página é fechada
+ window.addEventListener('beforeunload', () => {
+  const username = getUsernameFromStorage();
+  if (username) {
+   channel.publish('user-left', { username: username });
+   clearUsernameFromStorage();
+  }
+ });
 
-// Publica um evento de saída do usuário quando a página é fechada
-window.addEventListener('beforeunload', () => {
- const username = getUsernameFromStorage();
- if (username) {
-  channel.publish('user-left', { username: username });
-  clearUsernameFromStorage();
- }
-});
-
-// Evento para expandir e colapsar a lista de usuários
-document.getElementById('user-info').addEventListener('click', () => {
- const userListContainer = document.getElementById('user-list-container');
- if (userListContainer.style.display === 'none' || userListContainer.style.display === '') {
-  userListContainer.style.display = 'flex';
- } else {
-  userListContainer.style.display = 'none';
- }
-});
+ // Evento para expandir e colapsar a lista de usuários
+ document.getElementById('user-info').addEventListener('click', () => {
+  const userListContainer = document.getElementById('user-list-container');
+  if (userListContainer.style.display === 'none' || userListContainer.style.display === '') {
+   userListContainer.style.display = 'flex';
+  } else {
+   userListContainer.style.display = 'none';
+  }
+ });
 </script>
 </body>
 </html>

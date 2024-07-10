@@ -117,7 +117,7 @@
       display: none;
       flex-direction: column;
       overflow-y: auto;
-      background-color: rgba(66, 68, 90, 0.8);
+      background-color: #fff;
     }
     #user-list {
       list-style: none;
@@ -150,7 +150,7 @@
 
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/ably/browser/static/ably.min.js"></script>
-<script>
+  <script>
  // Configuração do Ably
  const ably = new Ably.Realtime({ key: 'ynrGug.SXDJOg:aoStJmyUcLlpwgEzYsJt8CFDsTBCq-yMjqNn6_DkgvM' });
 
@@ -166,7 +166,7 @@
 
  // Objeto para armazenar marcadores
  const markers = {};
- const onlineUsers = new Set();
+ const onlineUsers = new Map();
 
  // Função para obter o nome de usuário do sessionStorage
  function getUsernameFromStorage() {
@@ -195,7 +195,7 @@
 
  // Pede ao usuário para inserir um nome de usuário
  function promptForUsername() {
-  const username = prompt('Digite seu nome:');
+  const username = prompt('Digite seu nome de usuário:');
   if (username) {
    setUsernameInStorage(username);
    sendLocationToAbly(username);
@@ -214,16 +214,18 @@
     const { latitude, longitude } = position.coords;
     if (latitude !== undefined && longitude !== undefined) {
      getReverseGeocode(latitude, longitude, address => {
+      const userAddress = address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
       channel.publish('update-location', {
        userId: username,
        lat: latitude,
        lng: longitude,
        name: username,
-       address: address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` // Exemplo de endereço fictício
+       address: userAddress
       });
 
       // Atualiza ou adiciona marcador no mapa
-      updateMarker(username, latitude, longitude, address);
+      updateMarker(username, latitude, longitude, userAddress);
+      updateUserList(username, userAddress);
      });
     } else {
      console.error('Latitude ou Longitude indefinidos.');
@@ -268,6 +270,7 @@
    if (userId !== getUsernameFromStorage()) {
     if (lat !== undefined && lng !== undefined) {
      updateMarker(userId, lat, lng, address);
+     updateUserList(userId, address);
     } else {
      console.error(`Latitude ou Longitude indefinidos para o usuário ${name}`);
     }
@@ -277,7 +280,7 @@
   // Evento para quando um usuário entra na sala
   channel.subscribe('user-joined', message => {
    const { username } = message.data;
-   onlineUsers.add(username);
+   onlineUsers.set(username, null);
    updateUserCounter();
   });
 
@@ -289,6 +292,12 @@
   });
  }
 
+ // Função para atualizar a lista de usuários
+ function updateUserList(username, address) {
+  onlineUsers.set(username, address);
+  updateUserCounter();
+ }
+
  // Função para atualizar o contador de usuários e a lista de usuários
  function updateUserCounter() {
   const counterDiv = document.getElementById('user-count');
@@ -297,9 +306,9 @@
 
    const userList = document.getElementById('user-list');
    userList.innerHTML = '';
-   onlineUsers.forEach(user => {
+   onlineUsers.forEach((address, user) => {
     const listItem = document.createElement('li');
-    listItem.textContent = `${user}`;
+    listItem.textContent = address ? `${user} (${address})` : user;
     userList.appendChild(listItem);
    });
   }

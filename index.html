@@ -61,10 +61,23 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
+    }
+    #user-list-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: white;
+      z-index: 999;
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
     }
     #user-list {
       list-style: none;
-      padding: 0;
+      padding: 10px;
       margin: 0;
     }
     #user-list li {
@@ -75,7 +88,9 @@
 <body>
   <div id="user-info">
     <div id="user-count">Usuários logados: 0</div>
-    <ul id="user-list"></ul>
+    <div id="user-list-container">
+      <ul id="user-list"></ul>
+    </div>
   </div>
   <div id="container">
     <div id="map"></div>
@@ -185,113 +200,113 @@
 
     // Função para receber e exibir localizações de outros usuários
     function getOtherUsersLocations() {
-      channel.subscribe('update-location', message => {
-        const { userId, lat, lng, name, address } = message.data;
-        if (userId !== getUsernameFromStorage()) {
-          if (lat !== undefined && lng !== undefined) {
-            updateMarker(userId, lat, lng);
-          } else {
-            console.error(`Latitude ou Longitude indefinidos para o usuário ${name}`);
-          }
-        }
-      });
+     channel.subscribe('update-location', message => {
+ const { userId, lat, lng, name, address } = message.data;
+ if (userId !== getUsernameFromStorage()) {
+  if (lat !== undefined && lng !== undefined) {
+   updateMarker(userId, lat, lng);
+  } else {
+   console.error(`Latitude ou Longitude indefinidos para o usuário ${name}`);
+  }
+ }
+});
 
-      // Evento para quando um usuário entra na sala
-      channel.subscribe('user-joined', message => {
-        const { username } = message.data;
-        onlineUsers.add(username);
-        updateUserCounter();
-      });
+// Evento para quando um usuário entra na sala
+channel.subscribe('user-joined', message => {
+ const { username } = message.data;
+ onlineUsers.add(username);
+ updateUserCounter();
+});
 
-      // Evento para quando um usuário sai da sala
-      channel.subscribe('user-left', message => {
-        const { username } = message.data;
-        onlineUsers.delete(username);
-        updateUserCounter();
-      });
-    }
+// Evento para quando um usuário sai da sala
+channel.subscribe('user-left', message => {
+ const { username } = message.data;
+ onlineUsers.delete(username);
+ updateUserCounter();
+});
+}
 
-    // Função para atualizar o contador de usuários
-    function updateUserCounter() {
-      const counterDiv = document.getElementById('user-count');
-      if (counterDiv) {
-        counterDiv.textContent = `Usuários logados: ${onlineUsers.size}`;
-        
-        const userList = document.getElementById('user-list');
-        userList.innerHTML = '';
-        onlineUsers.forEach(user => {
-          const listItem = document.createElement('li');
-          listItem.textContent = `${user}`;
-          userList.appendChild(listItem);
-        });
-      }
-    }
+// Função para atualizar o contador de usuários e a lista de usuários
+function updateUserCounter() {
+ const counterDiv = document.getElementById('user-count');
+ if (counterDiv) {
+  counterDiv.textContent = `Usuários logados: ${onlineUsers.size}`;
 
-    // Envia mensagem de chat para o canal Ably
-    document.getElementById('chat-send').addEventListener('click', () => {
-      const messageText = document.getElementById('chat-input').value;
-      const username = getUsernameFromStorage();
-      if (username) {
-        chatChannel.publish('message', {
-          username: username,
-          text: messageText,
-        });
-        document.getElementById('chat-input').value = '';
-      } else {
-        alert('Você precisa estar logado para enviar mensagens.');
-      }
-    });
+  const userList = document.getElementById('user-list');
+  userList.innerHTML = '';
+  onlineUsers.forEach(user => {
+   const listItem = document.createElement('li');
+   listItem.textContent = `${user}`;
+   userList.appendChild(listItem);
+  });
+ }
+}
 
-    // Recebe mensagem de chat do canal Ably
-    chatChannel.subscribe('message', message => {
-      const { username, text } = message.data;
-      const chatLog = document.getElementById('chat-log');
-      const chatMessage = document.createElement('div');
-      chatMessage.innerHTML = `<b>${username}</b>: ${text}`;
-      chatLog.appendChild(chatMessage);
+// Envia mensagem de chat para o canal Ably
+document.getElementById('chat-send').addEventListener('click', () => {
+ const messageText = document.getElementById('chat-input').value;
+ const username = getUsernameFromStorage();
+ if (username) {
+  chatChannel.publish('message', {
+   username: username,
+   text: messageText,
+  });
+  document.getElementById('chat-input').value = '';
+ } else {
+  alert('Você precisa estar logado para enviar mensagens.');
+ }
+});
 
-      // Atualiza a última mensagem no popup do marcador correspondente
-      if (markers[username]) {
-        const content = markers[username].getPopup().getContent();
-        const updatedContent = content.replace(/<br\/>[^<]*$/, '') + `<br/>${text}`;
-        markers[username].getPopup().setContent(updatedContent).openPopup();
-      }
-    });
+// Recebe mensagem de chat do canal Ably
+chatChannel.subscribe('message', message => {
+ const { username, text } = message.data;
+ const chatLog = document.getElementById('chat-log');
+ const chatMessage = document.createElement('div');
+ chatMessage.innerHTML = `<b>${username}</b>: ${text}`;
+ chatLog.appendChild(chatMessage);
 
-    // Mostra notificação no topo da página
-    function showNotification(message) {
-      const notificationDiv = document.createElement('div');
-      notificationDiv.id = 'notification';
-      notificationDiv.style.position = 'fixed';
-      notificationDiv.style.top = '10px';
-      notificationDiv.style.left = '50%';
-      notificationDiv.style.transform = 'translateX(-50%)';
-      notificationDiv.style.backgroundColor = '#444';
-      notificationDiv.style.color = 'white';
-      notificationDiv.style.padding = '10px 20px';
-      notificationDiv.style.borderRadius = '5px';
-      notificationDiv.style.zIndex = '1000';
-      notificationDiv.textContent = message;
-      document.body.appendChild(notificationDiv);
-      setTimeout(() => {
-        notificationDiv.style.display = 'none';
-      }, 6000);
-    }
+ // Atualiza a última mensagem no popup do marcador correspondente
+ if (markers[username]) {
+  const content = markers[username].getPopup().getContent();
+  const updatedContent = content.replace(/<br\/>[^<]*$/, '') + `<br/>${text}`;
+  markers[username].getPopup().setContent(updatedContent).openPopup();
+ }
+});
 
-    // Chama a função para obter e enviar a localização do usuário
-    getUserLocation();
+// Mostra notificação no topo da página
+function showNotification(message) {
+ const notificationDiv = document.getElementById('notification');
+ notificationDiv.style.display = 'block';
+ notificationDiv.textContent = message;
+ setTimeout(() => {
+  notificationDiv.style.display = 'none';
+ }, 6000);
+}
 
-    // Chama a função para receber e exibir localizações de outros usuários
-    getOtherUsersLocations();
+// Chama a função para obter e enviar a localização do usuário
+getUserLocation();
 
-    // Publica um evento de saída do usuário quando a página é fechada
-    window.addEventListener('beforeunload', () => {
-      const username = getUsernameFromStorage();
-      if (username) {
-        channel.publish('user-left', { username: username });
-        clearUsernameFromStorage();
-      }
-    });
-  </script>
+// Chama a função para receber e exibir localizações de outros usuários
+getOtherUsersLocations();
+
+// Publica um evento de saída do usuário quando a página é fechada
+window.addEventListener('beforeunload', () => {
+ const username = getUsernameFromStorage();
+ if (username) {
+  channel.publish('user-left', { username: username });
+  clearUsernameFromStorage();
+ }
+});
+
+// Evento para expandir e colapsar a lista de usuários
+document.getElementById('user-info').addEventListener('click', () => {
+ const userListContainer = document.getElementById('user-list-container');
+ if (userListContainer.style.display === 'none' || userListContainer.style.display === '') {
+  userListContainer.style.display = 'flex';
+ } else {
+  userListContainer.style.display = 'none';
+ }
+});
+</script>
 </body>
 </html>

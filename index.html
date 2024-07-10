@@ -10,32 +10,73 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      width: 100%;
+      overflow: hidden;
     }
     #container {
       display: flex;
-      height: 100vh;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      position: relative;
     }
     #map {
-      flex: 1;
+      position: absolute;
+      top: 40px;
+      left: 0;
       height: 100%;
+      width: 100%;
+      z-index: 0;
     }
     #chat {
-      flex: 1;
+      top: 70%;
+      flex: 0 0 30%;
       height: 100%;
-      padding: 20px;
+      padding: 10px;
       box-sizing: border-box;
       overflow-y: scroll;
+      background-color: rgba(66, 68, 90, 0.8);
+      z-index: 1;
+      position: relative;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat h2 {
+      margin-top: 0;
     }
     #chat-log {
+      flex: 1;
       margin-bottom: 10px;
-      min-height: 80%;
+      overflow-y: auto;
+    }
+    .chat-input-container {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
     #chat-input {
-      width: 100%;
+      width: calc(100% - 90px);
       margin-bottom: 10px;
+      padding: 9px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      outline: none;
     }
     #chat-send {
-      width: 100%;
+      position: relative ;
+      left: 80%;
+      bottom: 10px;
+      transform: translateY(-100%);
+      width: 80px;
+      padding: 10px;
+      font-size: 14px;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      border-radius: 0px 5px 5px 0px;
     }
     #notification {
       position: fixed;
@@ -74,6 +115,7 @@
       display: none;
       flex-direction: column;
       overflow-y: auto;
+      background-color: rgba(66, 68, 90, 0.8);
     }
     #user-list {
       list-style: none;
@@ -96,7 +138,7 @@
   <div id="container">
     <div id="map"></div>
     <div id="chat">
-      <h2>Sala de Chat</h2>
+      <h2>Chat em Tempo Real</h2>
       <div id="chat-log"></div>
       <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
       <button id="chat-send">Enviar</button>

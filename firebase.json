@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "estoque-6ab30-ba2bd",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "https://map-chat-flame.vercel.app/mapa.html"
+      }
+    ]
+  }
+}

@@ -21,6 +21,10 @@
     .editing {
       margin-bottom: 5px;
     }
+    .delete-button {
+      color: red;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -81,6 +85,14 @@
         userLogs[userId].slice().reverse().forEach(log => {
           listItem.innerHTML += log.time + ' - ' + log.location + '<br>';
         });
+        
+        // Adiciona o botão de exclusão
+        var deleteButton = document.createElement('span');
+        deleteButton.textContent = 'Excluir Logs';
+        deleteButton.className = 'delete-button';
+        deleteButton.onclick = function() { deleteUserLogs(userId); };
+        listItem.appendChild(deleteButton);
+
         userListItems.appendChild(listItem);
       }
     }
@@ -107,6 +119,15 @@
         saveToLocalStorage();
         updateUserList();
       };
+    }
+
+    // Função para excluir logs de um usuário
+    function deleteUserLogs(userId) {
+      if (confirm('Você tem certeza que deseja excluir os logs deste usuário?')) {
+        delete userLogs[userId];
+        saveToLocalStorage();
+        updateUserList();
+      }
     }
 
     // Função para processar atualizações de localização recebidas pelo Ably

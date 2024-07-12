@@ -6,17 +6,28 @@
   <script src="https://cdn.ably.io/lib/ably.min-1.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    #mapOther {
+      width: 100%;
+      height: 60vh; /* Altura ajustada para o mapa em dispositivos móveis */
+    }
+    #userList {
+      padding: 10px;
+    }
     #userListItems li {
-      margin-bottom: 20px; /* Espaço extra para o nome do usuário */
-      max-height: 150px; /* Altura máxima para cada item de log */
-      overflow-y: auto; /* Adiciona a barra de rolagem */
-      border: 1px solid #ddd; /* Borda para distinguir os logs */
+      margin-bottom: 10px; /* Espaço reduzido para melhor exibição em telas menores */
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
       padding: 5px;
     }
     .user-name {
-      font-weight: bold; /* Negrito para o nome do usuário */
-      margin-bottom: 5px; /* Espaço entre o nome e o log */
-      cursor: pointer; /* Cursor de ponteiro para indicar que é editável */
+      font-weight: bold;
+      margin-bottom: 5px;
+      cursor: pointer;
     }
     .editing {
       margin-bottom: 5px;
@@ -25,10 +36,24 @@
       color: red;
       cursor: pointer;
     }
+    @media (max-width: 600px) {
+      #userList {
+        padding: 5px;
+      }
+      #userListItems li {
+        margin-bottom: 5px; /* Menos margem para se ajustar em telas pequenas */
+      }
+      .user-name {
+        font-size: 14px; /* Tamanho da fonte menor para melhor visualização */
+      }
+      .delete-button {
+        font-size: 12px; /* Tamanho da fonte do botão reduzido */
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="mapOther" style="width: 100%; height: 500px;"></div>
+  <div id="mapOther"></div>
   <div id="userList">
     <h2>Usuários Online</h2>
     <ul id="userListItems"></ul>
@@ -44,19 +69,17 @@
       attribution: '&copy; GuiMarx'
     }).addTo(map);
 
-    var markers = {};  // Dicionário para rastrear marcadores por userId
-    var userNames = {}; // Dicionário para rastrear nomes de usuários por userId
-    var userLogs = {}; // Dicionário para rastrear histórico de localizações por userId
-    var userListItems = document.getElementById('userListItems'); // Referência à lista de usuários
+    var markers = {}; 
+    var userNames = {}; 
+    var userLogs = {}; 
+    var userListItems = document.getElementById('userListItems');
     var notificationSound = document.getElementById('notificationSound');
 
-    // Função para salvar dados no localStorage
     function saveToLocalStorage() {
       localStorage.setItem('userNames', JSON.stringify(userNames));
       localStorage.setItem('userLogs', JSON.stringify(userLogs));
     }
 
-    // Função para carregar dados do localStorage
     function loadFromLocalStorage() {
       var savedUserNames = localStorage.getItem('userNames');
       var savedUserLogs = localStorage.getItem('userLogs');
@@ -69,9 +92,8 @@
       updateUserList();
     }
 
-    // Função para atualizar a lista de usuários na interface
     function updateUserList() {
-      userListItems.innerHTML = ''; // Limpa a lista atual
+      userListItems.innerHTML = ''; 
       for (var userId in userLogs) {
         var userNameDiv = document.createElement('div');
         userNameDiv.className = 'user-name';
@@ -81,12 +103,10 @@
         userListItems.appendChild(userNameDiv);
 
         var listItem = document.createElement('li');
-        // Adiciona os logs na ordem inversa
         userLogs[userId].slice().reverse().forEach(log => {
           listItem.innerHTML += log.time + ' - ' + log.location + '<br>';
         });
-        
-        // Adiciona o botão de exclusão
+
         var deleteButton = document.createElement('span');
         deleteButton.textContent = 'Excluir Logs';
         deleteButton.className = 'delete-button';
@@ -97,7 +117,6 @@
       }
     }
 
-    // Função para editar o nome do usuário
     function editUserName(event) {
       var userNameDiv = event.target;
       var userId = userNameDiv.getAttribute('data-user-id');
@@ -112,7 +131,6 @@
       userNameDiv.replaceWith(input);
       input.focus();
 
-      // Quando clicar fora do input, salvar o nome
       input.onblur = function() {
         var newName = input.value;
         userNames[userId] = newName;
@@ -121,7 +139,6 @@
       };
     }
 
-    // Função para excluir logs de um usuário
     function deleteUserLogs(userId) {
       if (confirm('Você tem certeza que deseja excluir os logs deste usuário?')) {
         delete userLogs[userId];
@@ -130,29 +147,26 @@
       }
     }
 
-    // Função para processar atualizações de localização recebidas pelo Ably
     channel.subscribe('location-update', function(message) {
       var userId = message.data.userId;
       var lat = message.data.lat;
       var lon = message.data.lon;
       var latlng = L.latLng(lat, lon);
 
-      // Se não houver um marcador para este usuário, cria um novo
       if (!markers[userId]) {
         markers[userId] = L.marker(latlng).addTo(map).bindPopup("Localização do usuário: " + userId).openPopup();
-        notificationSound.play(); // Toca o som quando um novo usuário aparece
+        notificationSound.play();
       } else {
         markers[userId].setLatLng(latlng).update();
       }
 
-      // Obtém o endereço reverso usando a API Nominatim
       var url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
       fetch(url)
         .then(response => response.json())
         .then(data => {
           var address = 'Usuário ' + userId + ' está em: ' + '<br>' + (data.address.road || 'Nome da rua não encontrado') + '<br>' + (data.address.suburb || '');
           var location = (data.address.road || 'Nome da rua não encontrado') + ', ' + (data.address.suburb || '');
-          var updateTime = new Date().toLocaleString();  // Obtém a data e hora atuais
+          var updateTime = new Date().toLocaleString();
           markers[userId].bindPopup(address + '<br>Última atualização: ' + updateTime).openPopup();
           
           if (!userLogs[userId]) {
@@ -172,7 +186,6 @@
         });
     });
 
-    // Carrega dados salvos do localStorage quando a página é carregada
     window.onload = function() {
       loadFromLocalStorage();
     };

@@ -12,7 +12,6 @@
       overflow-y: auto;
       border: 1px solid #ddd;
       padding: 5px;
-      position: relative;
     }
     .user-name {
       font-weight: bold;
@@ -21,15 +20,6 @@
     }
     .editing {
       margin-bottom: 5px;
-    }
-    .delete-log {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background-color: red;
-      color: white;
-      border: none;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -56,11 +46,13 @@
     var userListItems = document.getElementById('userListItems');
     var notificationSound = document.getElementById('notificationSound');
 
+    // Função para salvar dados no localStorage
     function saveToLocalStorage() {
       localStorage.setItem('userNames', JSON.stringify(userNames));
       localStorage.setItem('userLogs', JSON.stringify(userLogs));
     }
 
+    // Função para carregar dados do localStorage
     function loadFromLocalStorage() {
       var savedUserNames = localStorage.getItem('userNames');
       var savedUserLogs = localStorage.getItem('userLogs');
@@ -73,6 +65,7 @@
       updateUserList();
     }
 
+    // Função para atualizar a lista de usuários na interface
     function updateUserList() {
       userListItems.innerHTML = '';
       for (var userId in userLogs) {
@@ -84,24 +77,14 @@
         userListItems.appendChild(userNameDiv);
 
         var listItem = document.createElement('li');
-        userLogs[userId].slice().reverse().forEach((log, index) => {
-          var logEntry = document.createElement('div');
-          logEntry.innerHTML = log.time + ' - ' + log.location;
-
-          var deleteButton = document.createElement('button');
-          deleteButton.textContent = 'Excluir';
-          deleteButton.className = 'delete-log';
-          deleteButton.onclick = function() {
-            deleteLog(userId, index);
-          };
-
-          logEntry.appendChild(deleteButton);
-          listItem.appendChild(logEntry);
+        userLogs[userId].slice().reverse().forEach(log => {
+          listItem.innerHTML += log.time + ' - ' + log.location + '<br>';
         });
         userListItems.appendChild(listItem);
       }
     }
 
+    // Função para editar o nome do usuário
     function editUserName(event) {
       var userNameDiv = event.target;
       var userId = userNameDiv.getAttribute('data-user-id');
@@ -124,6 +107,7 @@
       };
     }
 
+    // Função para processar atualizações de localização recebidas pelo Ably
     function processLocationUpdate(message) {
       var userId = message.data.userId;
       var lat = message.data.lat;
@@ -143,7 +127,7 @@
         .then(data => {
           var address = 'Usuário ' + userId + ' está em: ' + '<br>' + (data.address.road || 'Nome da rua não encontrado') + '<br>' + (data.address.suburb || '');
           var location = (data.address.road || 'Nome da rua não encontrado') + ', ' + (data.address.suburb || '');
-          var updateTime = new Date().toLocaleString();
+var updateTime = new Date().toLocaleString();
           markers[userId].bindPopup(address + '<br>Última atualização: ' + updateTime).openPopup();
 
           if (!userLogs[userId]) {
@@ -163,12 +147,7 @@
         });
     }
 
-    function deleteLog(userId, logIndex) {
-      userLogs[userId].splice(logIndex, 1);
-      saveToLocalStorage();
-      updateUserList();
-    }
-
+    // Carregar mensagens históricas ao abrir a página
     channel.history({ limit: 1000 }, function(err, resultPage) {
       if (err) {
         console.error('Erro ao carregar mensagens históricas:', err);
@@ -179,9 +158,11 @@
         processLocationUpdate(message);
       });
 
+      // Continuar recebendo atualizações de localização em tempo real
       channel.subscribe('location-update', processLocationUpdate);
     });
 
+    // Carregar dados salvos do localStorage quando a página é carregada
     window.onload = function() {
       loadFromLocalStorage();
     };

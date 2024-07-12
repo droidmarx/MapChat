@@ -6,28 +6,17 @@
   <script src="https://cdn.ably.io/lib/ably.min-1.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    #mapOther {
-      width: 100%;
-      height: 60vh; /* Altura ajustada para o mapa em dispositivos móveis */
-    }
-    #userList {
-      padding: 10px;
-    }
     #userListItems li {
-      margin-bottom: 10px; /* Espaço reduzido para melhor exibição em telas menores */
-      max-height: 150px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
+      margin-bottom: 20px; /* Espaço extra para o nome do usuário */
+      max-height: 150px; /* Altura máxima para cada item de log */
+      overflow-y: auto; /* Adiciona a barra de rolagem */
+      border: 1px solid #ddd; /* Borda para distinguir os logs */
       padding: 5px;
     }
     .user-name {
-      font-weight: bold;
-      margin-bottom: 5px;
-      cursor: pointer;
+      font-weight: bold; /* Negrito para o nome do usuário */
+      margin-bottom: 5px; /* Espaço entre o nome e o log */
+      cursor: pointer; /* Cursor de ponteiro para indicar que é editável */
     }
     .editing {
       margin-bottom: 5px;
@@ -36,31 +25,39 @@
       color: red;
       cursor: pointer;
     }
-    @media (max-width: 600px) {
-      #userList {
-        padding: 5px;
-      }
-      #userListItems li {
-        margin-bottom: 5px; /* Menos margem para se ajustar em telas pequenas */
-      }
-      .user-name {
-        font-size: 14px; /* Tamanho da fonte menor para melhor visualização */
-      }
-      .delete-button {
-        font-size: 12px; /* Tamanho da fonte do botão reduzido */
-      }
-    }
   </style>
 </head>
 <body>
-  <div id="mapOther"></div>
+  <div id="mapOther" style="width: 100%; height: 500px;"></div>
   <div id="userList">
     <h2>Usuários Online</h2>
     <ul id="userListItems"></ul>
   </div>
   <audio id="notificationSound" src="/audio/ffselect.mp3"></audio>
 
-  <script>
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics.js";
+    import { getDatabase, ref, set, push, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-database.js";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDMaTBJVg_JOMusj4lL6pxtRq76AJfRhx8",
+      authDomain: "estoque-6ab30.firebaseapp.com",
+      databaseURL: "https://estoque-6ab30-default-rtdb.firebaseio.com",
+      projectId: "estoque-6ab30",
+      storageBucket: "estoque-6ab30.appspot.com",
+      messagingSenderId: "141604968422",
+      appId: "1:141604968422:web:e318db22e4ee5cd01ba827",
+      measurementId: "G-7DVY8DZN6G"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+
     var ably = new Ably.Realtime('ynrGug.SXDJOg:aoStJmyUcLlpwgEzYsJt8CFDsTBCq-yMjqNn6_DkgvM');
     var channel = ably.channels.get('user-location');
 
@@ -69,17 +66,19 @@
       attribution: '&copy; GuiMarx'
     }).addTo(map);
 
-    var markers = {}; 
-    var userNames = {}; 
-    var userLogs = {}; 
-    var userListItems = document.getElementById('userListItems');
+    var markers = {};  // Dicionário para rastrear marcadores por userId
+    var userNames = {}; // Dicionário para rastrear nomes de usuários por userId
+    var userLogs = {}; // Dicionário para rastrear histórico de localizações por userId
+    var userListItems = document.getElementById('userListItems'); // Referência à lista de usuários
     var notificationSound = document.getElementById('notificationSound');
 
+    // Função para salvar dados no localStorage
     function saveToLocalStorage() {
       localStorage.setItem('userNames', JSON.stringify(userNames));
       localStorage.setItem('userLogs', JSON.stringify(userLogs));
     }
 
+    // Função para carregar dados do localStorage
     function loadFromLocalStorage() {
       var savedUserNames = localStorage.getItem('userNames');
       var savedUserLogs = localStorage.getItem('userLogs');
@@ -92,8 +91,9 @@
       updateUserList();
     }
 
+    // Função para atualizar a lista de usuários na interface
     function updateUserList() {
-      userListItems.innerHTML = ''; 
+      userListItems.innerHTML = ''; // Limpa a lista atual
       for (var userId in userLogs) {
         var userNameDiv = document.createElement('div');
         userNameDiv.className = 'user-name';
@@ -103,10 +103,12 @@
         userListItems.appendChild(userNameDiv);
 
         var listItem = document.createElement('li');
+        // Adiciona os logs na ordem inversa
         userLogs[userId].slice().reverse().forEach(log => {
           listItem.innerHTML += log.time + ' - ' + log.location + '<br>';
         });
-
+        
+        // Adiciona o botão de exclusão
         var deleteButton = document.createElement('span');
         deleteButton.textContent = 'Excluir Logs';
         deleteButton.className = 'delete-button';
@@ -117,6 +119,7 @@
       }
     }
 
+    // Função para editar o nome do usuário
     function editUserName(event) {
       var userNameDiv = event.target;
       var userId = userNameDiv.getAttribute('data-user-id');
@@ -131,6 +134,7 @@
       userNameDiv.replaceWith(input);
       input.focus();
 
+      // Quando clicar fora do input, salvar o nome
       input.onblur = function() {
         var newName = input.value;
         userNames[userId] = newName;
@@ -139,55 +143,83 @@
       };
     }
 
+    // Função para excluir logs de um usuário
     function deleteUserLogs(userId) {
       if (confirm('Você tem certeza que deseja excluir os logs deste usuário?')) {
         delete userLogs[userId];
+        remove(ref(database, 'userLogs/' + userId)); // Remove os logs do Firebase
         saveToLocalStorage();
         updateUserList();
       }
     }
 
+    // Função para processar atualizações de localização recebidas pelo Ably
     channel.subscribe('location-update', function(message) {
       var userId = message.data.userId;
       var lat = message.data.lat;
       var lon = message.data.lon;
       var latlng = L.latLng(lat, lon);
 
+      // Se não houver um marcador para este usuário, cria um novo
       if (!markers[userId]) {
         markers[userId] = L.marker(latlng).addTo(map).bindPopup("Localização do usuário: " + userId).openPopup();
-        notificationSound.play();
+        notificationSound.play(); // Toca o som quando um novo usuário aparece
       } else {
         markers[userId].setLatLng(latlng).update();
       }
 
+      // Obtém o endereço reverso usando a API Nominatim
       var url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
       fetch(url)
         .then(response => response.json())
         .then(data => {
           var address = 'Usuário ' + userId + ' está em: ' + '<br>' + (data.address.road || 'Nome da rua não encontrado') + '<br>' + (data.address.suburb || '');
           var location = (data.address.road || 'Nome da rua não encontrado') + ', ' + (data.address.suburb || '');
-          var updateTime = new Date().toLocaleString();
+          var updateTime = new Date().toLocaleString();  // Obtém a data e hora atuais
           markers[userId].bindPopup(address + '<br>Última atualização: ' + updateTime).openPopup();
           
           if (!userLogs[userId]) {
             userLogs[userId] = [];
           }
           
-          userLogs[userId].push({
+          var log = {
             time: updateTime,
             location: location
-          });
-          
+          };
+
+          userLogs[userId].push(log);
           saveToLocalStorage();
           updateUserList();
+
+          // Armazenar o log no Firebase
+          storeLogInFirebase(userId, log);
         })
         .catch(error => {
           console.error('Erro ao obter endereço:', error);
         });
     });
 
+    // Função para armazenar logs no Firebase
+    function storeLogInFirebase(userId, log) {
+      push(ref(database, 'userLogs/' + userId), log);
+    }
+
+    // Função para carregar logs do Firebase
+    function loadFromFirebase() {
+      const userLogsRef = ref(database, 'userLogs');
+      onValue(userLogsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          userLogs = data;
+          updateUserList();
+        }
+      });
+    }
+
+    // Carrega dados salvos do localStorage e do Firebase quando a página é carregada
     window.onload = function() {
       loadFromLocalStorage();
+      loadFromFirebase();
     };
   </script>
 </body>

@@ -1,64 +1,65 @@
-# Map Chat
+# Mapa em Tempo Real com Ably e Leaflet
 
-Bem-vindo ao Map Chat! Este projeto é uma aplicação web que combina geolocalização em tempo real e previsão do tempo, integrando diversas tecnologias para proporcionar uma experiência interativa e informativa.
+## Visão Geral
 
-## Tecnologias Utilizadas
-
-- **OpenWeatherMap**: Para obter dados de previsão do tempo.
-- **Leaflet**: Biblioteca JavaScript para mapas interativos.
-- **Ably**: Plataforma de mensagens em tempo real para compartilhar localização.
-- **JavaScript**: Linguagem principal para desenvolvimento do script.
-- **HTML/CSS**: Para estrutura e estilização da página.
+Este projeto cria uma aplicação de mapa em tempo real usando Ably e Leaflet. A aplicação permite que os usuários compartilhem sua localização e conversem com outros em tempo real. As localizações dos usuários são exibidas em um mapa e as mensagens podem ser enviadas e recebidas através de uma interface de chat.
 
 ## Funcionalidades
 
-- **Geolocalização em Tempo Real**: O site obtém e compartilha sua localização atual.
-- **Previsão do Tempo**: Mostra a previsão do tempo para sua localização atual.
-- **Armazenamento de UUID**: O UUID do usuário é salvo no local storage para reutilização em visitas futuras.
-- **Compartilhamento de Localização**: Envia sua localização para outra página em tempo real, mesmo que ela esteja fechada.
+- **Compartilhamento de Localização em Tempo Real**: Os usuários podem compartilhar sua localização, que é exibida em um mapa do Leaflet.
+- **Funcionalidade de Chat**: Os usuários podem enviar e receber mensagens em tempo real.
+- **Lista de Usuários**: Exibe uma lista de usuários online com seus endereços.
+- **Notificações**: Notificações em tempo real para eventos de entrada e saída de usuários.
+- **Sessão de Usuário Persistente**: Os nomes de usuários são armazenados no `sessionStorage` para sessões persistentes.
+
+## Tecnologias Utilizadas
+
+- **Ably**: Para mensagens em tempo real e compartilhamento de localização.
+- **Leaflet**: Para a exibição interativa do mapa.
+- **OpenWeatherMap**: (opcional) Para integração de dados meteorológicos.
+- **Geolocalização de IP**: Para gerar um nome de usuário único com base no endereço IP do usuário.
 
 ## Como Usar
 
-1. **Acesse o Site**: Visite [Map Chat](https://map-chat-flame.vercel.app/).
-2. **Permitir Acesso à Localização**: Quando solicitado, permita que o site acesse sua localização.
-3. **Visualize o Mapa**: Veja sua localização atual no mapa interativo.
-4. **Previsão do Tempo**: Confira a previsão do tempo para sua localização.
-5. **Compartilhe a Localização**: Sua localização será automaticamente compartilhada com outras instâncias do site em tempo real.
+1. **Configuração**:
+   - Clone o repositório ou baixe o arquivo HTML.
+   - Certifique-se de ter uma chave de API do Ably. Substitua a chave de API no script pelo seu próprio.
 
-## Instalação e Desenvolvimento
+2. **Executando a Aplicação**:
+   - Abra o arquivo HTML em um navegador web.
+   - A aplicação solicitará sua localização e usará seu endereço IP para gerar um nome de usuário único.
 
-Se você deseja clonar e executar este projeto localmente, siga os passos abaixo:
+3. **Interações do Usuário**:
+   - **Compartilhamento de Localização**: Sua localização será compartilhada em tempo real e exibida no mapa.
+   - **Chat**: Use o campo de entrada de chat para enviar mensagens. Suas mensagens aparecerão no registro de chat e no popup do marcador da sua localização.
+   - **Lista de Usuários**: Clique no contador "Usuários logados" para ver uma lista de usuários online e seus endereços.
+   - **Sair**: Clique no botão "Sair da sala" para sair da sessão. Isso limpará seu nome de usuário e interromperá o compartilhamento da sua localização.
 
-1. Clone o repositório:
-    ```sh
-    git clone https://github.com/seu-usuario/map-chat.git
-    ```
-2. Navegue até o diretório do projeto:
-    ```sh
-    cd map-chat
-    ```
-3. Instale as dependências:
-    ```sh
-    npm install
-    ```
-4. Crie um arquivo `.env` na raiz do projeto e adicione suas chaves de API:
-    ```env
-    VITE_OPENWEATHERMAP_API_KEY=sua_chave
-    VITE_ABLY_API_KEY=sua_chave
-    ```
-5. Inicie o servidor de desenvolvimento:
-    ```sh
-    npm run dev
-    ```
+4. **Notificações**:
+   - Você receberá notificações quando entrar ou sair da sessão.
 
-## Contribuição
+## Personalização
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests.
+- **Estilo**: Modifique os estilos CSS dentro da tag `<style>` para alterar a aparência do mapa e da interface de chat.
+- **Geolocalização**: Ajuste a lógica de geolocalização e obtenção de IP conforme necessário.
+- **Integração com Ably**: Personalize os canais do Ably para diferentes funcionalidades conforme necessário.
+
+## Notas Importantes
+
+- Certifique-se de que a geolocalização esteja ativada no seu navegador para que a aplicação funcione corretamente.
+- A aplicação usa `sessionStorage` para armazenar o nome de usuário, que é limpo quando o usuário sai ou fecha a página.
+- As mensagens de chat são armazenadas temporariamente e exibidas no registro de chat e nos popups dos marcadores.
+
+## Dependências
+
+- [Leaflet](https://leafletjs.com/)
+- [Biblioteca JavaScript do Ably](https://ably.com/)
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto é de código aberto e está disponível sob a [Licença MIT](https://opensource.org/licenses/MIT).
 
----
+## Contato
 
-Feito com ♥ por [Gui Marx](https://github.com/droidmarx).
+Para quaisquer dúvidas ou problemas, por favor, entre em contato com o mantenedor do projeto.[Gui Marx]
+(https://github.com/droidmarx/Chat/settings/pages)

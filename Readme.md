@@ -61,5 +61,5 @@ Este projeto é de código aberto e está disponível sob a [Licença MIT](https
 
 ## Contato
 
-Para quaisquer dúvidas ou problemas, por favor, entre em contato com o mantenedor do projeto.[Gui Marx]
-(https://github.com/droidmarx/Chat/settings/pages)
+Para quaisquer dúvidas ou problemas, por favor, entre em contato com o mantenedor do projeto.
+[Gui Marx](https://github.com/droidmarx)
